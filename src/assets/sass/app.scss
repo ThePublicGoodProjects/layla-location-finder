@@ -1,0 +1,57 @@
+@import "foundation-grid.css";
+
+.location-container {
+
+    .location-list {
+        max-height : 500px;
+        overflow-x : hidden;
+        overflow-y : auto;
+        padding    : 0 2rem;
+    }
+
+    .button-group {
+        margin-bottom : 1rem;
+        display       : flex;
+        flex-wrap     : nowrap;
+        align-items   : stretch;
+
+        > .button {
+            margin        : 0;
+            margin-right  : 1px;
+            margin-bottom : 1px;
+            font-size     : 0.9rem;
+            flex          : 0 0 auto;
+        }
+    }
+
+    .button {
+        display          : inline-block;
+        vertical-align   : middle;
+        margin           : 0 0 1rem 0;
+        padding          : 0.85em 1em;
+        border           : 1px solid #0000;
+        border-radius    : 0;
+        transition       : background-color 0.25s ease-out, color 0.25s ease-out;
+        font-family      : inherit;
+        font-size        : 0.9rem;
+        line-height      : 1;
+        text-align       : center;
+        cursor           : pointer;
+        background-color : #e5e5e5;
+        outline          : none;
+        color            : #000000;
+        &.selected {
+            background-color : darken(#e5e5e5, 30%);
+        }
+    }
+
+    .vue-map-container {
+        height: 500px;
+    }
+
+    .list-item {
+        padding       : 1rem 0;
+        border-bottom : 1px solid black;
+        cursor: pointer;
+    }
+}

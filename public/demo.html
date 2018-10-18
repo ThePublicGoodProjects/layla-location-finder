@@ -1,0 +1,19 @@
+<meta charset="utf-8">
+<title>laylaLocationFinder demo</title>
+<script src="https://unpkg.com/vue"></script>
+<script src="../dist/pgpLaylaFinder.umd.js"></script>
+<link rel="stylesheet" href="../dist/pgpLaylaFinder.css">
+
+<div id="app">
+    <demo></demo>
+</div>
+<script>
+    new Vue({
+        components: {
+            demo: pgpLaylaFinder.default.GoogleMap
+        }
+    }).$mount('#app')
+</script>
+<script>
+    console.log(pgpLaylaFinder)
+</script>

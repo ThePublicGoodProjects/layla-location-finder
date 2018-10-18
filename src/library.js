@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import App from './App.vue'
+import GoogleMap from "./components/GoogleMap";
 import * as VueGoogleMaps from "vue2-google-maps";
 
 Vue.use(VueGoogleMaps, {
@@ -10,6 +10,12 @@ Vue.use(VueGoogleMaps, {
 });
 Vue.config.productionTip = false;
 
-new Vue({
-  render: h => h(App)
-}).$mount('#map-render');
+const Components = {
+    GoogleMap
+};
+
+Object.keys(Components).forEach(name => {
+    Vue.component(name, Components[name]);
+});
+
+export default Components;
