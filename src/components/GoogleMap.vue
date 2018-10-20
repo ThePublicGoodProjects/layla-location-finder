@@ -8,7 +8,7 @@
                             :options="mapOptions"
                             :center="center"
                             :zoom="12"
-                            >
+                    >
                         <gmap-info-window :options="infoOptions" :position="infoWindowPos" :opened="infoWinOpen" @closeclick="closeInfoWindow">
                         </gmap-info-window>
                         <gmap-marker
@@ -22,11 +22,26 @@
             </div>
             <div class="cell medium-6">
                 <div class="location-list">
-                    <div class="list-item" v-for="item in addressMarkers" @click="selectAddress(item)">
-                        <div>{{item.name}}</div>
-                        <div>{{item.address}}</div>
-                        <div>{{item.phone}}</div>
-                        <div>{{item.hours}}</div>
+                    <div class="list-container">
+                        <div class="list-item" v-for="item in addressMarkers" @click="selectAddress(item)">
+                            <div class="title">{{item.name}}</div>
+                            <div class="address">{{item.address}}</div>
+                            <div class="phone"><span>Phone: </span>{{item.phone}}</div>
+                            <div class="hours">
+                                <div class="title">Hours</div>
+                                <div class="hours-list">
+                                    <div class="hours-list-item" v-for="(hours) in item.hoursList">
+                                        <span>{{hours}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="services">
+                                <div class="title">Services</div>
+                                <div class="service-item" v-for="(service, index) in item.serviceList">
+                                    <span class="name">{{ service }}</span><span v-if="index < (item.serviceList.length - 1)">, </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -36,9 +51,12 @@
 
 <script>
     /* eslint-disable no-unused-vars, no-console, no-debugger */
-    import jsonLocations from '../files/locations-v3.json';
+    import smoothscroll from 'smoothscroll-polyfill';
+    import jsonLocations from '../files/locations-v4.json';
     import 'lodash';
     import '../assets/sass/app.scss';
+
+    smoothscroll.polyfill();
 
     const FIELD_PILL          = 'pill',
           FIELD_PATCH         = 'patch',
@@ -190,6 +208,23 @@
                 return marker[FIELD_ADDRESS] && marker[FIELD_ADDRESS].length > 0;
             });
 
+            let serviceTypes    = [
+                FIELD_PATCH,
+                FIELD_PILL,
+                FIELD_RING,
+                FIELD_IUD,
+                FIELD_SHOT,
+                FIELD_IMPLANT,
+                FIELD_CONDOMS,
+                FIELD_MORNING_AFTER
+            ];
+            this.addressMarkers = this.addressMarkers.map(location => {
+                location.serviceList = serviceTypes.filter(service => location[service] === 'Yes');
+                location.hoursList   = location.hours.split('\n');
+                return location;
+            });
+            console.log(this.addressMarkers);
+
             if (settings.geocode) {
                 this.geocode(this.addressMarkers);
             }
@@ -200,6 +235,16 @@
             });
 
             // this.geolocate();
+        },
+
+        computed: {
+            locationList() {
+
+                return '';
+
+            }
+
+
         },
 
         methods: {
@@ -304,13 +349,16 @@
                 this.center = marker;
             },
             getInfoObject(marker) {
-                let element   = document.createElement('div'),
-                    titleEl   = document.createElement('div'),
-                    addressEl = document.createElement('div'),
-                    phoneEl   = document.createElement('div'),
-                    hoursEl   = document.createElement('ul');
+                let element    = document.createElement('div'),
+                    container  = document.createElement('div'),
+                    titleEl    = document.createElement('div'),
+                    addressEl  = document.createElement('div'),
+                    phoneEl    = document.createElement('div'),
+                    hoursEl    = document.createElement('div'),
+                    servicesEl = document.createElement('div');
 
 
+                container.classList.add('marker-item');
                 titleEl.innerHTML = marker[FIELD_NAME] || '';
                 titleEl.classList.add('title');
 
@@ -318,21 +366,36 @@
                 addressEl.classList.add('address');
 
                 phoneEl.innerHTML = marker[FIELD_PHONE] || '';
-                phoneEl.classList.add('address');
+                phoneEl.classList.add('phone');
 
+                hoursEl.classList.add('hours');
+                servicesEl.classList.add('services');
+                servicesEl.innerHTML = '<div class="title">Services</div>';
 
-                element.appendChild(titleEl);
-                element.appendChild(addressEl);
-                element.appendChild(phoneEl);
-                if (marker.hours) {
-                    marker.hours.split('\n').map(line => {
-                        // console.log(line);
-                        let itemElement       = document.createElement('li');
+                container.appendChild(titleEl);
+                container.appendChild(addressEl);
+                container.appendChild(phoneEl);
+                if (marker.hoursList) {
+                    marker.hoursList.map(line => {
+                        let itemElement       = document.createElement('div');
                         itemElement.innerHTML = line;
                         hoursEl.appendChild(itemElement);
                     });
-                    element.appendChild(hoursEl);
+                    container.appendChild(hoursEl);
                 }
+                if (marker.serviceList) {
+                    marker.serviceList.map((line, index) => {
+                        let itemElement = document.createElement('span');
+                        itemElement.classList.add('name');
+                        itemElement.innerHTML = line;
+                        servicesEl.appendChild(itemElement);
+                        if (index < marker.serviceList.length - 1) {
+                            servicesEl.appendChild(document.createTextNode(', '));
+                        }
+                    });
+                    container.appendChild(servicesEl);
+                }
+                element.appendChild(container);
 
                 return element;
             },
@@ -352,6 +415,7 @@
                 this.closeInfoWindow();
                 let found = _.find(this.markers, {name: address.name});
                 this.toggleInfoWindow(found);
+                // document.querySelector('#birth-control-finder').scrollIntoView({behavior: 'smooth', block: 'start'});
             },
             toggleInfoWindow(marker, idx) {
                 this.infoWindowPos       = marker.position;
