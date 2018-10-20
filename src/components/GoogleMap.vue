@@ -13,9 +13,10 @@
                         </gmap-info-window>
                         <gmap-marker
                                 :key="index"
+                                :zIndex="m.zIndex"
                                 v-for="(m, index) in markers"
                                 :position="m.position"
-                                @click="toggleInfoWindow(m,index)"
+                                @click="toggleInfoWindow(m,index,$event)"
                         ></gmap-marker>
                     </gmap-map>
                 </div>
@@ -50,7 +51,7 @@
 </template>
 
 <script>
-    /* eslint-disable no-unused-vars, no-console, no-debugger */
+    /* eslint-disable no-unused-vars */
     import smoothscroll from 'smoothscroll-polyfill';
     import jsonLocations from '../files/locations-v4.json';
     import 'lodash';
@@ -219,11 +220,10 @@
                 FIELD_MORNING_AFTER
             ];
             this.addressMarkers = this.addressMarkers.map(location => {
-                location.serviceList = serviceTypes.filter(service => location[service] === 'Yes');
+                location.serviceList = serviceTypes.filter(service => location[service] === 'Yes').map(service => this.getTranslation(service, 'eng'));
                 location.hoursList   = location.hours.split('\n');
                 return location;
             });
-            console.log(this.addressMarkers);
 
             if (settings.geocode) {
                 this.geocode(this.addressMarkers);
@@ -278,7 +278,6 @@
                                         lat: location.lat(),
                                         lng: location.lng()
                                     };
-                                console.log(marker[FIELD_ADDRESS], center.lat, center.lng);
                             }
                             else {
                                 // console.log(marker.name, marker.address)
@@ -313,8 +312,6 @@
                     markers = _.filter(this.addressMarkers, query);
                 }
 
-                console.log(_.map(markers, 'name'));
-
                 this.markers = [];
                 markers.map(marker => this.setMarker(marker));
                 this.$refs.map.fitBounds(this.bounds);
@@ -341,6 +338,7 @@
                 this.markers.push({
                     name    : marker[FIELD_NAME],
                     position: location,
+                    zIndex  : 1,
                     infoText: this.getInfoObject(marker)
                 });
                 if (marker[FIELD_INITIAL] === 'Yes') {
@@ -349,7 +347,8 @@
                 this.center = marker;
             },
             getInfoObject(marker) {
-                let element    = document.createElement('div'),
+                let vm = this,
+                    element    = document.createElement('div'),
                     container  = document.createElement('div'),
                     titleEl    = document.createElement('div'),
                     addressEl  = document.createElement('div'),
@@ -414,10 +413,17 @@
             selectAddress(address) {
                 this.closeInfoWindow();
                 let found = _.find(this.markers, {name: address.name});
+                found.zIndex = 1;
                 this.toggleInfoWindow(found);
                 // document.querySelector('#birth-control-finder').scrollIntoView({behavior: 'smooth', block: 'start'});
             },
-            toggleInfoWindow(marker, idx) {
+            resetMarkers() {
+                this.markers.map(marker => marker.zIndex = 1);
+            },
+            toggleInfoWindow(marker, idx, event) {
+
+                this.resetMarkers();
+                marker.zIndex            = 1000;
                 this.infoWindowPos       = marker.position;
                 this.infoContent         = marker.infoText.innerHTML;
                 this.infoOptions.content = marker.infoText.innerHTML;
