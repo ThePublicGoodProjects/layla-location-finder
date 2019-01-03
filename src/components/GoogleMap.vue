@@ -28,7 +28,7 @@
                             <div class="title">{{item.name}}</div>
                             <div class="address">{{item.address}}</div>
                             <div class="phone"><span>Phone: </span>{{item.phone}}</div>
-                            <div class="hours">
+                            <div class="hours item-group">
                                 <div class="title">Hours</div>
                                 <div class="hours-list">
                                     <div class="hours-list-item" v-for="(hours) in item.hoursList">
@@ -36,10 +36,16 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="services">
+                            <div class="services item-group">
                                 <div class="title">Services</div>
                                 <div class="service-item" v-for="(service, index) in item.serviceList">
                                     <span class="name">{{ service }}</span><span v-if="index < (item.serviceList.length - 1)">, </span>
+                                </div>
+                            </div>
+                            <div class="insurances item-group">
+                                <div class="title">Accepted Insurance</div>
+                                <div class="display-inline" v-for="(insurance, index) in item.insuranceList">
+                                    <span class="name">{{ insurance }}</span><span v-if="index < (item.insuranceList.length - 1)">, </span>
                                 </div>
                             </div>
                         </div>
@@ -53,12 +59,13 @@
 <script>
     /* eslint-disable no-unused-vars */
     import smoothscroll from 'smoothscroll-polyfill';
-    import jsonLocations from '../files/locations-v4.json';
+    import jsonLocations from '../files/locations-v5.json';
     import 'lodash';
     import '../assets/sass/app.scss';
 
     smoothscroll.polyfill();
 
+    "Accepts Medicaid (Y/N)\tAccepts Private Insurance (Y/N)\tAccepts Fidelis (Y/N)\tAccepts Uninsured (Y/N)";
     const FIELD_PILL          = 'pill',
           FIELD_PATCH         = 'patch',
           FIELD_RING          = 'ring',
@@ -73,7 +80,11 @@
           FIELD_HOURS         = 'hours',
           FIELD_LAT           = 'lat',
           FIELD_LNG           = 'lng',
-          FIELD_INITIAL       = 'initial';
+          FIELD_INITIAL       = 'initial',
+          FIELD_MEDICAID      = 'Medicaid',
+          FIELD_PRIVATE_INS   = 'Private Insurance',
+          FIELD_FIDELIS       = 'Fidelis',
+          FIELD_UNINSURED     = 'Uninsured';
 
 
     let settings = {
@@ -103,7 +114,7 @@
             {
                 name : FIELD_MORNING_AFTER,
                 eng  : 'Morning after pill',
-                match: /^Morning After/i
+                match: /^Morning After Pill/i
             },
             {
                 name : FIELD_SHOT,
@@ -154,6 +165,26 @@
                 name : FIELD_INITIAL,
                 eng  : 'Initial Map',
                 match: /^initial/i
+            },
+            {
+                name : FIELD_MEDICAID,
+                eng  : 'Medicaid',
+                match: /^accepts medicaid/i
+            },
+            {
+                name : FIELD_PRIVATE_INS,
+                eng  : 'Private Insurance',
+                match: /^accepts private/i
+            },
+            {
+                name : FIELD_UNINSURED,
+                eng  : 'Uninsured',
+                match: /^accepts uninsured/i
+            },
+            {
+                name : FIELD_FIDELIS,
+                eng  : 'Fidelis',
+                match: /^accepts fidelis/i
             }
         ].reduce((acc, curr) => {
             acc[curr.name] = curr;
@@ -204,24 +235,33 @@
 
         mounted() {
             let vm              = this,
-                markerLocations = this.translateJsonLocations(jsonLocations);
+                rawLocations = this.translateJsonLocations(jsonLocations),
+                markerLocations = _.orderBy(rawLocations, 'name');
+
             this.addressMarkers = markerLocations.filter(marker => {
                 return marker[FIELD_ADDRESS] && marker[FIELD_ADDRESS].length > 0;
             });
 
             let serviceTypes    = [
-                FIELD_PATCH,
-                FIELD_PILL,
-                FIELD_RING,
-                FIELD_IUD,
-                FIELD_SHOT,
-                FIELD_IMPLANT,
-                FIELD_CONDOMS,
-                FIELD_MORNING_AFTER
-            ];
+                    FIELD_PATCH,
+                    FIELD_PILL,
+                    FIELD_RING,
+                    FIELD_IUD,
+                    FIELD_SHOT,
+                    FIELD_IMPLANT,
+                    FIELD_CONDOMS,
+                    FIELD_MORNING_AFTER
+                ],
+                insuranceTypes  = [
+                    FIELD_MEDICAID,
+                    FIELD_PRIVATE_INS,
+                    FIELD_FIDELIS,
+                    FIELD_UNINSURED
+                ];
             this.addressMarkers = this.addressMarkers.map(location => {
-                location.serviceList = serviceTypes.filter(service => location[service] === 'Yes').map(service => this.getTranslation(service, 'eng'));
-                location.hoursList   = location.hours.split('\n');
+                location.serviceList   = serviceTypes.filter(service => location[service].match(/^y/i)).map(service => this.getTranslation(service, 'eng'));
+                location.insuranceList = insuranceTypes.filter(type => location[type].match(/^y/i)).map(type => this.getTranslation(type, 'eng'));
+                location.hoursList     = location.hours.split('\n');
                 return location;
             });
 
@@ -278,8 +318,7 @@
                                         lat: location.lat(),
                                         lng: location.lng()
                                     };
-                            }
-                            else {
+                            } else {
                                 // console.log(marker.name, marker.address)
                             }
                             setTimeout(function () {
@@ -307,8 +346,7 @@
 
                 if (!query) {
                     markers = this.addressMarkers;
-                }
-                else {
+                } else {
                     markers = _.filter(this.addressMarkers, query);
                 }
 
@@ -322,11 +360,12 @@
                     let res = {};
                     Object.keys(row).forEach(rowField => {
                         Object.values(lang).forEach(field => {
-                            if (field.match.test(rowField)) {
+                            if (field.match.test(rowField.trim().replace(/['"]/g, ''))) {
                                 res[field.name] = row[rowField];
                             }
                         });
                     });
+
                     return res;
                 });
             },
@@ -347,17 +386,19 @@
                 this.center = marker;
             },
             getInfoObject(marker) {
-                let vm = this,
+                let vm         = this,
                     element    = document.createElement('div'),
                     container  = document.createElement('div'),
                     titleEl    = document.createElement('div'),
                     addressEl  = document.createElement('div'),
                     phoneEl    = document.createElement('div'),
                     hoursEl    = document.createElement('div'),
-                    servicesEl = document.createElement('div');
+                    servicesEl = document.createElement('div'),
+                    insuranceEl = document.createElement('div');
 
 
                 container.classList.add('marker-item');
+
                 titleEl.innerHTML = marker[FIELD_NAME] || '';
                 titleEl.classList.add('title');
 
@@ -368,8 +409,12 @@
                 phoneEl.classList.add('phone');
 
                 hoursEl.classList.add('hours');
+
                 servicesEl.classList.add('services');
                 servicesEl.innerHTML = '<div class="title">Services</div>';
+
+                insuranceEl.classList.add('insurance');
+                insuranceEl.innerHTML = '<div class="title">Accepted Insurance</div>';
 
                 container.appendChild(titleEl);
                 container.appendChild(addressEl);
@@ -394,6 +439,18 @@
                     });
                     container.appendChild(servicesEl);
                 }
+                if (marker.insuranceList) {
+                    marker.insuranceList.map((line, index) => {
+                        let itemElement = document.createElement('span');
+                        itemElement.classList.add('name');
+                        itemElement.innerHTML = line;
+                        insuranceEl.appendChild(itemElement);
+                        if (index < marker.insuranceList.length - 1) {
+                            insuranceEl.appendChild(document.createTextNode(', '));
+                        }
+                    });
+                    container.appendChild(insuranceEl);
+                }
                 element.appendChild(container);
 
                 return element;
@@ -412,7 +469,7 @@
             },
             selectAddress(address) {
                 this.closeInfoWindow();
-                let found = _.find(this.markers, {name: address.name});
+                let found    = _.find(this.markers, {name: address.name});
                 found.zIndex = 1;
                 this.toggleInfoWindow(found);
                 // document.querySelector('#birth-control-finder').scrollIntoView({behavior: 'smooth', block: 'start'});
