@@ -84,7 +84,8 @@
           FIELD_MEDICAID      = 'Medicaid',
           FIELD_PRIVATE_INS   = 'Private Insurance',
           FIELD_FIDELIS       = 'Fidelis',
-          FIELD_UNINSURED     = 'Uninsured';
+          FIELD_UNINSURED     = 'Uninsured',
+          FIELD_STD_TEST     = 'std testing';
 
 
     let settings = {
@@ -185,7 +186,12 @@
                 name : FIELD_FIDELIS,
                 eng  : 'Fidelis',
                 match: /^accepts fidelis/i
-            }
+            },
+            {
+                name : FIELD_STD_TEST,
+                eng  : 'STD Testing',
+                match: /^STD Test/i
+            },
         ].reduce((acc, curr) => {
             acc[curr.name] = curr;
             return acc;
@@ -250,7 +256,8 @@
                     FIELD_SHOT,
                     FIELD_IMPLANT,
                     FIELD_CONDOMS,
-                    FIELD_MORNING_AFTER
+                    FIELD_MORNING_AFTER,
+                    FIELD_STD_TEST
                 ],
                 insuranceTypes  = [
                     FIELD_MEDICAID,
