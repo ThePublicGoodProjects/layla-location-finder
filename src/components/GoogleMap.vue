@@ -59,7 +59,7 @@
 <script>
     /* eslint-disable no-unused-vars */
     import smoothscroll from 'smoothscroll-polyfill';
-    import jsonLocations from '../files/locations-v5.json';
+    import jsonLocations from '../files/locations-v6.json';
     import 'lodash';
     import '../assets/sass/app.scss';
 
@@ -85,6 +85,7 @@
           FIELD_PRIVATE_INS   = 'Private Insurance',
           FIELD_FIDELIS       = 'Fidelis',
           FIELD_UNINSURED     = 'Uninsured',
+          FIELD_PUBLIC_PROV   = 'public provider',
           FIELD_STD_TEST     = 'std testing';
 
 
@@ -92,6 +93,11 @@
             geocode: false
         },
         lang     = [
+            {
+                name : FIELD_PUBLIC_PROV,
+                eng  : 'Public Provider',
+                match: /^public prov/i
+            },
             {
                 name : FIELD_PILL,
                 eng  : 'Pill',
@@ -242,7 +248,14 @@
         mounted() {
             let vm              = this,
                 rawLocations = this.translateJsonLocations(jsonLocations),
-                markerLocations = _.orderBy(rawLocations, 'name');
+                sortedLocations = _.orderBy(rawLocations, 'name'),
+            publicLocations = _.filter(sortedLocations, function (o) {
+                return o[FIELD_PUBLIC_PROV].toLowerCase() === 'yes';
+            }),
+                privateLocations = _.filter(sortedLocations, function (o) {
+                    return o[FIELD_PUBLIC_PROV].toLowerCase() !== 'yes';
+                }),
+                markerLocations = publicLocations.concat(privateLocations);
 
             this.addressMarkers = markerLocations.filter(marker => {
                 return marker[FIELD_ADDRESS] && marker[FIELD_ADDRESS].length > 0;
