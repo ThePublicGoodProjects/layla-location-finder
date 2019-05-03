@@ -8,18 +8,16 @@
     "build-bundle": "vue-cli-service build --target lib --name pgpLaylaFinder ./src/library.js",
     "lint": "vue-cli-service lint"
   },
-  "dependencies": {
-    "vue": "^2.5.17"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^3.0.3",
-    "@vue/cli-plugin-eslint": "^3.0.3",
-    "@vue/cli-service": "^3.0.3",
+    "@vue/cli-plugin-babel": "^3.7.0",
+    "@vue/cli-service": "^3.7.0",
     "lodash": "^4.17.11",
-    "node-sass": "^4.9.3",
+    "node-sass": "^4.12.0",
     "sass-loader": "^7.1.0",
     "smoothscroll-polyfill": "^0.4.3",
-    "vue-template-compiler": "^2.5.17",
+    "vue": "^2.6.10",
+    "vue-template-compiler": "^2.6.10",
     "vue2-google-maps": "^0.10.2"
   },
   "eslintConfig": {
